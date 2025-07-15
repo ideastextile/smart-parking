@@ -1,12 +1,12 @@
 services:
   - type: web
-    name: smart-parking
+    name: smart_parking
     runtime: python
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn smartpark.wsgi:application"
+    startCommand: "gunicorn smart_parking.wsgi:application"
     envVars:
       - key: DJANGO_SETTINGS_MODULE
-        value: smartpark.settings
+        value: smart_parking.settings
       - key: PYTHON_VERSION
         value: 3.11
       - key: SECRET_KEY
