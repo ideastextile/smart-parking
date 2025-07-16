@@ -1,0 +1,177 @@
+{% extends 'parking/base.html' %}
+
+{% block title %}Vehicle Exit - SmartPark{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">⬅️ Vehicle Exit</h1>
+</div>
+
+<div style="max-width: 800px; margin: 0 auto;">
+    {% comment %} <div class="card" style="margin-bottom: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h3 style="margin-bottom: 0.5rem;">Barrier Status</h3>
+                <span id="barrierStatus" class="status-badge {% if barrier_status == 'Open' %}success{% endif %}">
+                    {{ barrier_status }}
+                </span>
+            </div>
+        </div>
+    </div>
+     {% endcomment %}
+    <div class="card">
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <p style="font-size: 1.1rem; color: #6b7280;">Use external scanner or enter details manually to process the vehicle exit.</p>
+        </div>
+        
+        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-radius: 8px; border: 2px dashed #3b82f6;">
+            <h3 style="text-align: center; margin-bottom: 1rem; color: #3b82f6;">🔍 External Scanner</h3>
+            <div class="form-group">
+                <label for="scannerInput" class="form-label">Scanner Input Field</label>
+                <input type="text" id="scannerInput" class="form-control" placeholder="Focus here and scan QR code with external scanner..." autofocus style="font-size: 1.1rem; padding: 1rem;">
+                <small class="form-text" style="color: #6b7280; margin-top: 0.5rem;">Position cursor in this field and scan the QR code with your external scanner device. The data will be processed automatically.</small>
+            </div>
+        </div>
+        
+        <div style="border-top: 2px solid #e5e7eb; padding-top: 2rem;">
+            <h3 style="text-align: center; margin-bottom: 2rem; color: #6b7280;">Manual Entry</h3>
+            
+            <form id="exitForm">
+                <div class="form-group">
+                    <label for="licensePlateExit" class="form-label">License Plate Number</label>
+                    <input type="text" id="licensePlateExit" name="license_plate" class="form-control" placeholder="Enter license plate (e.g., ABC-123)" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="tokenNumber" class="form-label">Token Number</label>
+                    <input type="text" id="tokenNumber" name="token_number" class="form-control" placeholder="Enter the token number from the receipt" required>
+                </div>
+                
+                <button type="submit" class="btn btn-success" style="width: 100%;">Process Vehicle Exit</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Handle external scanner input
+document.getElementById('scannerInput').addEventListener('input', function(e) {
+    const scannedData = e.target.value.trim();
+    
+    // Check if the input looks like QR data (JSON format)
+    if (scannedData.length > 10 && (scannedData.startsWith('{') || scannedData.includes('license_plate'))) {
+        try {
+            const qrData = JSON.parse(scannedData);
+            if (qrData.license_plate && qrData.token_number) {
+                // Auto-fill the manual entry form
+                document.getElementById('licensePlateExit').value = qrData.license_plate;
+                document.getElementById('tokenNumber').value = qrData.token_number;
+                
+                // Clear scanner input
+                e.target.value = '';
+                
+                // Auto-submit the form
+                setTimeout(() => {
+                    document.getElementById('exitForm').dispatchEvent(new Event('submit'));
+                }, 500);
+                
+                showAlert('QR code scanned successfully! Processing exit...', 'success');
+            }
+        } catch (error) {
+            // If not valid JSON, treat as token number
+            if (scannedData.length === 8 && /^\d+$/.test(scannedData)) {
+                document.getElementById('tokenNumber').value = scannedData;
+                e.target.value = '';
+                showAlert('Token scanned successfully!', 'success');
+            }
+        }
+    }
+});
+
+// Handle manual form submission
+document.getElementById('exitForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const data = {
+        license_plate: formData.get('license_plate'),
+        token_number: formData.get('token_number')
+    };
+
+    if (!data.license_plate || !data.token_number) {
+        showAlert('Please enter both license plate and token number', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch('{% url "parking:vehicle_exit" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+
+        const contentType = response.headers.get("content-type") || "";
+        let result = {};
+
+        if (contentType.includes("application/json")) {
+            result = await response.json();
+        } else {
+            throw new Error("Response is not valid JSON");
+        }
+
+        if (response.ok && result.success) {
+            showAlert('Vehicle exit processed successfully! Barrier is now open.', 'success');
+
+            // Reset UI
+            e.target.reset();
+            document.getElementById('scannerInput').value = '';
+            const barrierStatus = document.getElementById('barrierStatus');
+            barrierStatus.textContent = 'Open';
+            barrierStatus.className = 'status-badge success';
+
+            setTimeout(() => {
+                barrierStatus.textContent = 'Closed';
+                barrierStatus.className = 'status-badge';
+            }, 10000);
+        } else {
+            showAlert(result.error || 'Exit failed.', 'error');
+        }
+
+    } catch (error) {
+        console.error('Exit error:', error); // Debug in console
+        showAlert('An error occurred. Please try again.', 'error');
+    }
+});
+
+// Keep scanner input focused for external scanner
+
+let manualEntryFocused = false;
+
+document.getElementById('scannerInput').addEventListener('blur', function () {
+    if (!manualEntryFocused) {
+        setTimeout(() => {
+            this.focus();
+        }, 100);
+    }
+});
+
+document.getElementById('licensePlateExit').addEventListener('focus', function () {
+    manualEntryFocused = true;
+});
+
+document.getElementById('tokenNumber').addEventListener('focus', function () {
+    manualEntryFocused = true;
+});
+{% comment %} document.getElementById('scannerInput').addEventListener('blur', function() {
+    setTimeout(() => {
+        this.focus();
+    }, 100);
+}); {% endcomment %}
+</script>
+{% endblock %}
+

@@ -1,0 +1,74 @@
+{% extends 'parking/base.html' %}
+
+{% block title %}SmartPark - Smart Parking Management{% endblock %}
+
+{% block content %}
+<div class="text-center my-10">
+    <h1 class="text-4xl font-bold text-gray-800 drop-shadow-md">Smart Parking Management</h1>
+    <p class="text-lg text-gray-500 mt-2">Efficiency meets security — Park with confidence in our state-of-the-art facility</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+    <div class="bg-blue-500 text-white rounded-2xl shadow-xl p-6 transform hover:scale-105 transition">
+        <div class="flex justify-between items-center mb-4">
+            <div class="text-xl font-semibold">Currently Parked</div>
+            <div class="text-3xl">🚗</div>
+        </div>
+        <div class="text-4xl font-bold text-center">{{ currently_parked }}</div>
+    </div>
+
+    <div class="bg-purple-500 text-white rounded-2xl shadow-xl p-6 transform hover:scale-105 transition">
+        <div class="flex justify-between items-center mb-4">
+            <div class="text-xl font-semibold">Total Vehicles Today</div>
+            <div class="text-3xl">📊</div>
+        </div>
+        <div class="text-4xl font-bold text-center">{{ total_today }}</div>
+    </div>
+
+    <div class="bg-green-500 text-white rounded-2xl shadow-xl p-6 transform hover:scale-105 transition">
+        <div class="flex justify-between items-center mb-4">
+            <div class="text-xl font-semibold">Avg. Minutes Per Vehicle</div>
+            <div class="text-3xl">⏱️</div>
+        </div>
+        <div class="text-4xl font-bold text-center">{{ avg_minutes }} min</div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition">
+        <div class="flex flex-col items-center text-center">
+            <div class="w-20 h-20 bg-blue-600 text-white rounded-full flex items-center justify-center text-3xl shadow-lg mb-4">➡️</div>
+            <h3 class="text-xl font-bold">Vehicle Entry</h3>
+            <p class="text-gray-500 mt-1 mb-4">Register incoming vehicles and generate secure tokens</p>
+            <a href="{% url 'parking:entry' %}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Enter Vehicle</a>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition">
+        <div class="flex flex-col items-center text-center">
+            <div class="w-20 h-20 bg-green-600 text-white rounded-full flex items-center justify-center text-3xl shadow-lg mb-4">⬅️</div>
+            <h3 class="text-xl font-bold">Vehicle Exit</h3>
+            <p class="text-gray-500 mt-1 mb-4">Validate tokens and process vehicle exits securely</p>
+            <a href="{% url 'parking:exit' %}" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">Exit Vehicle</a>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition">
+        <div class="flex flex-col items-center text-center">
+            <div class="w-20 h-20 bg-purple-600 text-white rounded-full flex items-center justify-center text-3xl shadow-lg mb-4">📊</div>
+            <h3 class="text-xl font-bold">Dashboard</h3>
+            <p class="text-gray-500 mt-1 mb-4">View real-time statistics and analyze parking patterns</p>
+            <a href="{% url 'parking:dashboard' %}" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition">View Dashboard</a>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition">
+        <div class="flex flex-col items-center text-center">
+            <div class="w-20 h-20 bg-teal-600 text-white rounded-full flex items-center justify-center text-3xl shadow-lg mb-4">⚙️</div>
+            <h3 class="text-xl font-bold">Features</h3>
+            <p class="text-gray-500 mt-1 mb-4">Real-time tracking, secure access, and detailed insights</p>
+            <a href="{% url 'parking:dashboard' %}" class="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700 transition">Explore Features</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

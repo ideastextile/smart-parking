@@ -1,0 +1,11 @@
+asgiref==3.9.1
+Django==5.2.4
+django-colorfield==0.14.0
+django-cors-headers==4.7.0
+django-qrcode==0.3
+pillow==11.3.0
+python-slugify==8.0.4
+qrcode==8.2
+sqlparse==0.5.3
+text-unidecode==1.3
+

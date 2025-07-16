@@ -1,0 +1,94 @@
+{% extends 'parking/base.html' %}
+
+{% block title %}Entry Receipt{% endblock %}
+
+{% block content %}
+<div class="print:hidden text-center my-6">
+    <h1 class="text-3xl font-bold text-blue-800">🎫 Vehicle Entry Receipt</h1>
+</div>
+
+<div class="receipt max-w-xl mx-auto bg-white/70 backdrop-blur-lg border border-gray-300 p-6 rounded-2xl shadow-2xl print:shadow-none print:bg-white print:p-0">
+    <div class="text-5xl text-center mb-3">
+    {% if vehicle_type == "motorcycle" %}
+        🏍️
+    {% else %}
+        🚗
+    {% endif %}
+</div>
+    <div class="text-center mb-6">
+        <h2 class="text-xl font-bold text-gray-800"> Circular Car Parking Plaza</h2>
+        <p class="text-sm text-gray-500 italic">Secure Parking Management System</p>
+    </div>
+
+    <div class="mb-4">
+        <table class="w-full text-sm text-left text-gray-700">
+            <tbody class="divide-y divide-gray-200">
+                <tr>
+                    <th class="py-2 font-medium w-1/2">License Plate:</th>
+                    <td class="py-2">{{ car_number }}</td>
+                </tr>
+                <tr>
+                    <th class="py-2 font-medium">Vehicle Type:</th>
+                    <td class="py-2">{{ vehicle_type|capfirst }}</td>
+                </tr>
+                <tr>
+                    <th class="py-2 font-medium">Token ID:</th>
+                    <td class="py-2 font-mono font-semibold text-blue-700">{{ token_id }}</td>
+                </tr>
+                <tr>
+                    <th class="py-2 font-medium">Entry Time:</th>
+                    <td class="py-2">{{ entry_time }}</td>
+                </tr>
+                {% if is_monthly_pass %}
+                <tr>
+                    <th class="py-2 font-medium">Monthly Pass:</th>
+                    <td class="py-2 text-green-600 font-semibold">✅ Yes</td>
+                </tr>
+                {% if pass_expires %}
+                <tr>
+                    <th class="py-2 font-medium">Pass Expires:</th>
+                    <td class="py-2">{{ pass_expires }}</td>
+                </tr>
+                {% endif %}
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="text-center my-8">
+        <h4 class="text-md font-medium text-gray-700">🔍 Scan QR Code on Exit</h4>
+        <div class="mt-4 mx-auto w-fit bg-white p-3 rounded-xl shadow-lg border border-gray-200">
+            <img src="data:image/png;base64,{{ qr_image }}" alt="QR Code" class="w-44 h-44" />
+        </div>
+    </div>
+
+    <div class="text-sm bg-blue-50 text-blue-900 rounded-lg p-4 mt-4">
+        ⚠️ Please keep this receipt safe. You'll need the token and plate number to exit.
+    </div>
+
+    <div class="text-center mt-6 print:hidden">
+        <button onclick="window.print()" class="bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white px-6 py-2 rounded-full shadow-md transition duration-300 ease-in-out">
+            🖨️ Print / Save Receipt
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+@media print {
+    body * {
+        visibility: hidden !important;
+    }
+    .receipt, .receipt * {
+        visibility: visible !important;
+    }
+    .receipt {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}

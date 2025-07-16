@@ -1,0 +1,277 @@
+{% extends 'parking/base.html' %}
+
+{% block title %}Dashboard - SmartPark{% endblock %}
+
+{% block content %}
+<div class="text-center mb-8">
+  <h1 class="text-3xl font-bold text-gray-800">📊 Parking Dashboard</h1>
+  <p class="text-gray-500">Monitor and manage parking activity in real-time</p>
+</div>
+
+<div class="flex justify-end mb-6 gap-4">
+  <button class="bg-indigo-600 text-white px-4 py-2 rounded shadow hover:bg-indigo-700 transition duration-200">📤 Export All</button>
+</div>
+
+<!-- Summary Stats -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+  <div class="bg-white rounded-2xl shadow-xl p-6 transform hover:scale-105 transition duration-300">
+    <div class="flex justify-between items-center">
+      <h2 class="text-lg font-semibold text-gray-700">Currently Parked</h2>
+      <span class="text-3xl">🚗</span>
+    </div>
+    <p class="mt-4 text-2xl font-bold text-blue-600">{{ currently_parked }}</p>
+  </div>
+  
+  <div class="bg-white rounded-2xl shadow-xl p-6 transform hover:scale-105 transition duration-300">
+    <div class="flex justify-between items-center">
+      <h2 class="text-lg font-semibold text-gray-700">Exited Vehicles</h2>
+      <span class="text-3xl">⬅️</span>
+    </div>
+    <p class="mt-4 text-2xl font-bold text-green-600">{{ exited_today }}</p>
+  </div>
+  
+  <div class="bg-white rounded-2xl shadow-xl p-6 transform hover:scale-105 transition duration-300">
+    <div class="flex justify-between items-center">
+      <h2 class="text-lg font-semibold text-gray-700">Avg. Parking Time</h2>
+      <span class="text-3xl">⏱️</span>
+    </div>
+    <p class="mt-4 text-2xl font-bold text-purple-600">{{ avg_minutes }} min</p>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="mb-6 flex gap-4">
+  <button onclick="switchTab('regular')" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700">Regular ({{ regular_vehicles.count }})</button>
+  <button onclick="switchTab('monthly')" class="bg-gray-600 text-white px-4 py-2 rounded shadow hover:bg-gray-700">Monthly Pass ({{ monthly_pass_vehicles.count }})</button>
+</div>
+
+<!-- Reset Confirmation Modal -->
+<div id="confirmModal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
+  <div class="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full text-center">
+    <h3 class="text-xl font-semibold mb-3">🔐 Confirm Reset</h3>
+    <p class="mb-4 text-gray-600">Enter admin code to reset all monthly data.</p>
+    <input type="password" id="resetCodeInput" class="w-full px-4 py-2 border rounded mb-4" placeholder="Admin Code">
+    <div class="flex justify-center gap-4">
+      <button onclick="hideConfirmModal()" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+      <button onclick="confirmReset()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Regular Vehicles Table -->
+<div id="regularSection">
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-xl font-semibold">🚘 Regular Vehicles</h2>
+    <button onclick="showConfirmModal()" class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700">🗑️ Reset Monthly Data</button>
+  </div>
+
+  <div class="flex gap-4 mb-4">
+    <input type="text" id="searchRegular" placeholder="Search..." class="w-1/3 px-4 py-2 border rounded">
+    <select id="filterRegular" class="px-4 py-2 border rounded">
+      <option value="">All</option>
+      <option value="parked">Parked</option>
+      <option value="exited">Exited</option>
+    </select>
+  </div>
+
+  <div class="overflow-x-auto rounded shadow-lg">
+    <table class="min-w-full bg-white border border-gray-200">
+      <thead>
+        <tr class="bg-gray-100 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+          <th class="px-6 py-3">License Plate</th>
+          <th class="px-6 py-3">Token Number</th>
+          <th class="px-6 py-3">Entry Time</th>
+          <th class="px-6 py-3">Exit Time</th>
+          <th class="px-6 py-3">Status</th>
+        </tr>
+      </thead>
+      <tbody class="text-gray-700 text-sm">
+        {% for record in regular_vehicles %}
+        <tr class="border-t border-gray-200 hover:bg-gray-50">
+          <td class="px-6 py-4">{{ record.vehicle.license_plate }}</td>
+          <td class="px-6 py-4">{{ record.token_number }}</td>
+          <td class="px-6 py-4">{{ record.entry_time|date:"M d, Y, h:i A" }}</td>
+          <td class="px-6 py-4">
+            {% if record.exit_time %}
+              {{ record.exit_time|date:"M d, Y, h:i A" }}
+            {% else %}
+              <span class="text-gray-400">-</span>
+            {% endif %}
+          </td>
+          <td class="px-6 py-4">
+            {% if record.status == 'parked' %}
+              <span class="bg-green-500 text-white px-2 py-1 rounded-full text-xs">Parked</span>
+            {% else %}
+              <span class="bg-gray-500 text-white px-2 py-1 rounded-full text-xs">Exited</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="text-center text-gray-500 py-4">No regular vehicles found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function switchTab(tab) {
+    const regularTab = document.getElementById('regularTab');
+    const monthlyTab = document.getElementById('monthlyTab');
+    const regularSection = document.getElementById('regularSection');
+    const monthlySection = document.getElementById('monthlySection');
+    
+    if (tab === 'regular') {
+        regularTab.className = 'btn btn-primary';
+        monthlyTab.className = 'btn btn-secondary';
+        regularSection.style.display = 'block';
+        monthlySection.style.display = 'none';
+    } else {
+        regularTab.className = 'btn btn-secondary';
+        monthlyTab.className = 'btn btn-primary';
+        regularSection.style.display = 'none';
+        monthlySection.style.display = 'block';
+    }
+}
+
+async function clearRegularData() {
+    if (confirm('Are you sure you want to clear all regular parking data? This action cannot be undone.')) {
+        try {
+            const response = await fetch('{% url "parking:clear_data" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showAlert('Regular parking data cleared successfully!', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            } else {
+                showAlert(result.error, 'error');
+            }
+        } catch (error) {
+            showAlert('An error occurred. Please try again.', 'error');
+            console.error('Error:', error);
+        }
+    }
+}
+
+async function clearMonthlyData() {
+    if (confirm('Are you sure you want to clear all monthly pass data? This action cannot be undone.')) {
+        try {
+            const response = await fetch('{% url "parking:clear_data" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showAlert('Monthly pass data cleared successfully!', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            } else {
+                showAlert(result.error, 'error');
+            }
+        } catch (error) {
+            showAlert('An error occurred. Please try again.', 'error');
+            console.error('Error:', error);
+        }
+    }
+}
+
+// Search and filter functionality
+document.getElementById('searchRegular').addEventListener('input', function() {
+    filterTable('regularTable', this.value, document.getElementById('filterRegular').value);
+});
+
+document.getElementById('filterRegular').addEventListener('change', function() {
+    filterTable('regularTable', document.getElementById('searchRegular').value, this.value);
+});
+
+document.getElementById('searchMonthly').addEventListener('input', function() {
+    filterTable('monthlyTable', this.value, document.getElementById('filterMonthly').value);
+});
+
+document.getElementById('filterMonthly').addEventListener('change', function() {
+    filterTable('monthlyTable', document.getElementById('searchMonthly').value, this.value);
+});
+
+function filterTable(tableId, searchTerm, statusFilter) {
+    const table = document.getElementById(tableId);
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const cells = row.getElementsByTagName('td');
+        
+        if (cells.length === 1) continue; // Skip empty state row
+        
+        const licensePlate = cells[0].textContent.toLowerCase();
+        const tokenNumber = cells[1].textContent.toLowerCase();
+        const status = row.getAttribute('data-status');
+        
+        const matchesSearch = licensePlate.includes(searchTerm.toLowerCase()) || 
+                            tokenNumber.includes(searchTerm.toLowerCase());
+        const matchesFilter = !statusFilter || status === statusFilter;
+        
+        if (matchesSearch && matchesFilter) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    }
+}
+</script>
+<!-- reset.button-->
+<script>
+function showConfirmModal() {
+    document.getElementById('confirmModal').classList.remove('hidden');
+}
+
+function hideConfirmModal() {
+    document.getElementById('confirmModal').classList.add('hidden');
+}
+
+function confirmReset() {
+    const code = document.getElementById('resetCodeInput').value.trim();
+    
+    if (code === "1010") {  // 🔐 Set your own secure code here
+        // Send reset request to backend
+        fetch("{% url 'parking:clear_data' %}", {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: JSON.stringify({ confirmed: true })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert("✅ All monthly data reset successfully!");
+                window.location.reload();
+            } else {
+                alert("❌ Error: " + data.error);
+            }
+        });
+    } else {
+        alert("❌ Incorrect code!");
+    }
+}
+</script>
+
+{% endblock %}
+
