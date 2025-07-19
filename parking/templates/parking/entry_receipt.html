@@ -8,15 +8,20 @@
 </div>
 
 <div class="receipt max-w-xl mx-auto bg-white/70 backdrop-blur-lg border border-gray-300 p-6 rounded-2xl shadow-2xl print:shadow-none print:bg-white print:p-0">
-    <div class="text-5xl text-center mb-3">
-    {% if vehicle_type == "motorcycle" %}
-        🏍️
-    {% else %}
-        🚗
-    {% endif %}
+   <div class="text-5xl text-center mb-3">
+  {% if vehicle_type == "motorcycle" %}
+    🏍️
+  {% elif vehicle_type == "car" %}
+    🚗
+  {% elif vehicle_type == "others" %}
+    🚚
+  {% else %}
+    🚚
+  {% endif %}
 </div>
+
     <div class="text-center mb-6">
-        <h2 class="text-xl font-bold text-gray-800"> Circular Car Parking Plaza</h2>
+        <h2 class="text-xl font-semibold">{{ request.user.profile.parking_name }}</h2>
         <p class="text-sm text-gray-500 italic">Secure Parking Management System</p>
     </div>
 
@@ -38,6 +43,10 @@
                 <tr>
                     <th class="py-2 font-medium">Entry Time:</th>
                     <td class="py-2">{{ entry_time }}</td>
+                </tr>
+                <tr>
+                    <th class="py-2 font-medium">Price</th>
+                    <td class="py-2" id="hourly-rate">Loading...</td>
                 </tr>
                 {% if is_monthly_pass %}
                 <tr>
@@ -64,6 +73,9 @@
 
     <div class="text-sm bg-blue-50 text-blue-900 rounded-lg p-4 mt-4">
         ⚠️ Please keep this receipt safe. You'll need the token and plate number to exit.
+ {% if receipt_notice %}
+    <span>{{ receipt_notice.message }}</span>
+{% endif %}
     </div>
 
     <div class="text-center mt-6 print:hidden">
@@ -91,4 +103,42 @@
     }
 }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Fetch current pricing and display on receipt
+    fetch('/api/current-pricing/')
+        .then(response => response.json())
+        .then(data => {
+            const vehicleType = '{{ vehicle_type }}';
+            let rate = 0;
+            
+            if (vehicleType === 'car') {
+                rate = data.car_price;
+            } else if (vehicleType === 'motorcycle') {
+                rate = data.motorcycle_price;
+            } else if (vehicleType === 'others') {
+                rate = data.others_price;
+            }
+            
+            const hourlyRateElement = document.getElementById('hourly-rate');
+            if (hourlyRateElement) {
+                {% if is_monthly_pass %}
+                    hourlyRateElement.innerHTML = '<span class="text-green-600 font-semibold">FREE (Monthly Pass)</span>';
+                {% else %}
+                    hourlyRateElement.innerHTML = '<span class="font-semibold text-blue-600">Rs' + rate.toFixed(2) + '</span>';
+                {% endif %}
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching pricing:', error);
+            const hourlyRateElement = document.getElementById('hourly-rate');
+            if (hourlyRateElement) {
+                hourlyRateElement.textContent = 'N/A';
+            }
+        });
+});
+</script>
 {% endblock %}

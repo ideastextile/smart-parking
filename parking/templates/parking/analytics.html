@@ -1,0 +1,166 @@
+{% extends 'parking/base.html' %}
+
+{% block title %}Analytics - SmartPark{% endblock %}
+
+{% block content %}
+<div class="container mx-auto p-4">
+    <h1 class="text-3xl font-bold mb-6">📊 Revenue Analytics</h1>
+
+    <!-- Revenue Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-gradient-to-r from-green-100 to-green-50 border border-green-200 rounded-2xl shadow-lg p-6">
+            <h2 class="text-lg font-semibold text-green-700">💰 Daily Revenue</h2>
+            <h3 class="mt-4 text-4xl font-extrabold text-green-800" id="daily-revenue">Rs0.00</h3>
+            <p class="text-sm text-gray-500 mt-1">Today's earnings</p>
+        </div>
+        <div class="bg-gradient-to-r from-blue-100 to-blue-50 border border-blue-200 rounded-2xl shadow-lg p-6">
+            <h2 class="text-lg font-semibold text-blue-700">📅 Weekly Revenue</h2>
+            <h3 class="mt-4 text-4xl font-extrabold text-blue-800" id="weekly-revenue">Rs0.00</h3>
+            <p class="text-sm text-gray-500 mt-1">Last 7 days</p>
+        </div>
+        <div class="bg-gradient-to-r from-purple-100 to-purple-50 border border-purple-200 rounded-2xl shadow-lg p-6">
+            <h2 class="text-lg font-semibold text-purple-700">📈 Monthly Revenue</h2>
+            <h3 class="mt-4 text-4xl font-extrabold text-purple-800" id="monthly-revenue">Rs0.00</h3>
+            <p class="text-sm text-gray-500 mt-1">This month</p>
+        </div>
+    </div>
+
+    <!-- Revenue Chart -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+        <h2 class="text-xl font-semibold mb-4">📊 Daily Revenue Trend (Last 30 Days)</h2>
+        <canvas id="revenueChart" width="400" height="200"></canvas>
+    </div>
+
+    <!-- Revenue by Vehicle Type -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+        <h2 class="text-xl font-semibold mb-4">🚗 Revenue by Vehicle Type</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full table-auto text-sm">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="px-4 py-3 text-left">Vehicle Type</th>
+                        <th class="px-4 py-3 text-left">Total Revenue</th>
+                        <th class="px-4 py-3 text-left">Vehicle Count</th>
+                        <th class="px-4 py-3 text-left">Average per Vehicle</th>
+                    </tr>
+                </thead>
+                <tbody id="revenue-by-type-table">
+                    <!-- Data will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Vehicle Count Today -->
+    <div class="bg-white rounded-2xl shadow-lg p-6">
+        <h2 class="text-xl font-semibold mb-4">🚙 Vehicle Statistics Today</h2>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="text-center p-4 bg-blue-50 rounded-lg">
+                <div class="text-2xl font-bold text-blue-600" id="vehicles-today">0</div>
+                <div class="text-sm text-gray-600">Total Vehicles Today</div>
+            </div>
+            <div class="text-center p-4 bg-green-50 rounded-lg">
+                <div class="text-2xl font-bold text-green-600" id="currently-parked">0</div>
+                <div class="text-sm text-gray-600">Currently Parked</div>
+            </div>
+            <div class="text-center p-4 bg-orange-50 rounded-lg">
+                <div class="text-2xl font-bold text-orange-600" id="avg-duration">0</div>
+                <div class="text-sm text-gray-600">Avg Duration (min)</div>
+            </div>
+            <div class="text-center p-4 bg-purple-50 rounded-lg">
+                <div class="text-2xl font-bold text-purple-600" id="peak-hour">--</div>
+                <div class="text-sm text-gray-600">Peak Hour</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Fetch revenue analytics data
+    fetch('/api/revenue-analytics/')
+        .then(response => response.json())
+        .then(data => {
+            // Update revenue cards
+            document.getElementById('daily-revenue').textContent = 'Rs' + parseFloat(data.daily_revenue).toFixed(2);
+            document.getElementById('weekly-revenue').textContent = 'Rs' + parseFloat(data.weekly_revenue).toFixed(2);
+            document.getElementById('monthly-revenue').textContent = 'Rs' + parseFloat(data.monthly_revenue).toFixed(2);
+
+            // Create revenue chart
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.daily_data.map(item => {
+                        const date = new Date(item.date);
+                        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    }),
+                    datasets: [{
+                        label: 'Daily Revenue ($)',
+                        data: data.daily_data.map(item => item.revenue),
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'Rs' + value.toFixed(2);
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Revenue: Rs' + context.parsed.y.toFixed(2);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Populate revenue by type table
+            const tableBody = document.getElementById('revenue-by-type-table');
+            tableBody.innerHTML = '';
+            
+            data.revenue_by_type.forEach(item => {
+                const row = document.createElement('tr');
+                const avgRevenue = item.vehicle_count > 0 ? (item.total_revenue / item.vehicle_count) : 0;
+                
+                row.innerHTML = `
+                    <td class="px-4 py-3 capitalize">${item.vehicle__vehicle_type}</td>
+                    <td class="px-4 py-3">$${parseFloat(item.total_revenue || 0).toFixed(2)}</td>
+                    <td class="px-4 py-3">${item.vehicle_count}</td>
+                    <td class="px-4 py-3">$${avgRevenue.toFixed(2)}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            if (data.revenue_by_type.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4" class="px-4 py-3 text-center text-gray-500">No data available</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching analytics data:', error);
+        });
+
+    // Fetch additional vehicle statistics
+    // You can extend this to fetch more detailed statistics
+    const currentlyParked = {{ currently_parked|default:0 }};
+    document.getElementById('currently-parked').textContent = currentlyParked;
+});
+</script>
+{% endblock %}
+

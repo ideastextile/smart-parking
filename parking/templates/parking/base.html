@@ -405,6 +405,24 @@
             }
         }
     </style>
+    <style>
+  .tab-btn {
+    @apply text-white px-5 py-2 rounded-full shadow transition-all duration-200;
+  }
+  .tab-btn:hover {
+    @apply brightness-110;
+  }
+  .btn-red {
+    @apply bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700;
+  }
+  .btn-gray {
+    @apply bg-gray-300 text-gray-800 px-4 py-2 rounded shadow hover:bg-gray-400;
+  }
+  .status-badge {
+    @apply text-white px-3 py-1 rounded-full text-xs font-semibold;
+  }
+</style>
+
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -415,12 +433,29 @@
             <li><a href="{% url 'parking:entry' %}" class="nav-link {% if request.resolver_match.url_name == 'entry' %}active{% endif %}">➡️ Entry</a></li>
             <li><a href="{% url 'parking:exit' %}" class="nav-link {% if request.resolver_match.url_name == 'exit' %}active{% endif %}">⬅️ Exit</a></li>
             <li><a href="{% url 'parking:dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">📊 Stats</a></li>
+            <li><a href="{% url 'parking:analytics' %}" class="nav-link {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}">💰 Analytics</a></li>
+            <li><a href="{% url 'parking:pricing_settings' %}" class="nav-link {% if request.resolver_match.url_name == 'pricing_settings' %}active{% endif %}">⚙️ Pricing</a></li>
         </ul>
         <div class="status-indicators">
             
             <span class="status-badge">🚗 {{ currently_parked|default:0 }} vehicles parked</span>
-            <a href="#" class="logout-btn">🚪 Logout</a>
+          {% if user.is_authenticated %}
+            <div class="flex items-center gap-4">
+                <a href="{% url 'parking:profile' %}" class="text-white hover:text-blue-200">👤 Profile</a>
+                <form action="{% url 'logout' %}" method="post" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" class="text-red-300 hover:text-red-100">Logout</button>
+                </form>
+            </div>
+          {% else %}
+            <div class="flex items-center gap-4">
+                <a href="{% url 'parking:login' %}" class="text-white hover:text-blue-200">Login</a>
+                {% comment %} <a href="{% url 'parking:register' %}" class="text-white hover:text-blue-200">Register</a> {% endcomment %}
+            </div>
+          {% endif %}
+
         </div>
+
     </nav>
 
     <main class="container">

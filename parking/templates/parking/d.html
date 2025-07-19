@@ -1,0 +1,185 @@
+<div class="container mx-auto p-4">
+
+  <h1 class="text-2xl font-bold mb-6">📊  {{ request.user.profile.parking_name }} Dashboard</h1>
+
+  <!-- Summary Stats -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white shadow rounded-lg p-4">
+      <h2 class="text-lg font-semibold mb-2">Currently Parked</h2>
+       <h3 class="mt-4 text-2xl font-bold text-blue-600">{{ currently_parked }}</h3>
+    </div>
+    <div class="bg-white shadow rounded-lg p-4">
+      <h2 class="text-lg font-semibold mb-2">Exited Today</h2>
+
+   <p class="mt-4 text-2xl font-bold text-green-600">{{ exited_today }}</p>
+    </div>
+    <div class="bg-white shadow rounded-lg p-4">
+      <h2 class="text-lg font-semibold mb-2">Total Vehicles</h2>
+      <p class="text-3xl font-bold text-blue-600">{{ total_vehicles }}</p>
+    </div>
+  </div>
+
+  <!-- Tab Buttons -->
+  <div class="flex gap-4 mb-6">
+    <button id="regularTab" onclick="switchTab('regular')" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700">
+      Regular ({{ regular_vehicles.count }})
+    </button>
+    <button id="monthlyTab" onclick="switchTab('monthly')" class="bg-gray-600 text-white px-4 py-2 rounded shadow hover:bg-gray-700">
+      Monthly Pass ({{ monthly_pass_vehicles.count }})
+    </button>
+  </div>
+
+  <!-- Regular Vehicles Table -->
+  <div id="regularSection">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-semibold">🚗 Regular Vehicles</h2>
+       <button onclick="showConfirmModal()" class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700">🗑️ Reset Monthly Data</button>
+    </div>
+    <!-- Reset Confirmation Modal -->
+<div id="confirmModal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
+  <div class="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full text-center">
+    <h3 class="text-xl font-semibold mb-3">🔐 Confirm Reset</h3>
+    <p class="mb-4 text-gray-600">Enter admin code to reset all monthly data.</p>
+    <input type="password" id="resetCodeInput" class="w-full px-4 py-2 border rounded mb-4" placeholder="Admin Code">
+    <div class="flex justify-center gap-4">
+      <button onclick="hideConfirmModal()" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+      <button onclick="confirmReset()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Confirm</button>
+    </div>
+  </div>
+</div>
+<div class="p-4 rounded-lg shadow-md bg-white dark:bg-gray-800">
+  <h2 class="text-xl font-bold mb-4">Backup Settings</h2>
+
+  <!-- Download Backup Button -->
+  <form action="{% url 'parking:download_backup' %}" method="get">
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow">
+      Download Backup
+    </button>
+  </form>
+
+  <!-- Upload Backup Button -->
+  <form action="{% url 'parking:upload_backup' %}" method="post" enctype="multipart/form-data" class="mt-4">
+    {% csrf_token %}
+    <input type="file" name="backup_file" accept=".json" class="mb-2">
+    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow">
+      Restore Backup
+    </button>
+  </form>
+</div>
+
+    <div class="flex gap-4 mb-4">
+      <input type="text" id="searchRegular" placeholder="Search..." class="w-1/3 px-4 py-2 border rounded">
+      <select id="filterRegular" class="px-4 py-2 border rounded">
+        <option value="">All</option>
+        <option value="parked">Parked</option>
+        <option value="exited">Exited</option>
+      </select>
+    </div>
+
+    <div class="overflow-x-auto rounded shadow-lg">
+      <table class="min-w-full bg-white border border-gray-200">
+        <thead>
+          <tr class="bg-gray-100 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+            <th class="px-6 py-3">License Plate</th>
+            <th class="px-6 py-3">Token Number</th>
+            <th class="px-6 py-3">Entry Time</th>
+            <th class="px-6 py-3">Exit Time</th>
+            <th class="px-6 py-3">Status</th>
+          </tr>
+        </thead>
+        <tbody class="text-gray-700 text-sm">
+          {% for record in regular_vehicles %}
+          <tr class="border-t border-gray-200 hover:bg-gray-50" data-status="{{ record.status }}">
+            <td class="px-6 py-4">{{ record.vehicle.license_plate }}</td>
+            <td class="px-6 py-4">{{ record.token_number }}</td>
+            <td class="px-6 py-4">{{ record.entry_time|date:"M d, Y, h:i A" }}</td>
+            <td class="px-6 py-4">
+              {% if record.exit_time %}
+                {{ record.exit_time|date:"M d, Y, h:i A" }}
+              {% else %}
+                <span class="text-gray-400">-</span>
+              {% endif %}
+            </td>
+            <td class="px-6 py-4">
+              {% if record.status == 'parked' %}
+                <span class="bg-green-500 text-white px-2 py-1 rounded-full text-xs">Parked</span>
+              {% else %}
+                <span class="bg-gray-500 text-white px-2 py-1 rounded-full text-xs">Exited</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="text-center text-gray-500 py-4">No records found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Monthly Pass Vehicles Table -->
+  <div id="monthlySection" style="display:none;">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-semibold">🅿️ Monthly Pass Vehicles</h2>
+    </div>
+
+    {% comment %} <div class="flex gap-4 mb-4">
+      <input type="text" id="searchMonthly" placeholder="Search..." class="w-1/3 px-4 py-2 border rounded">
+      <select id="filterMonthly" class="px-4 py-2 border rounded">
+        <option value="">All</option>
+        <option value="parked">Parked</option>
+        <option value="exited">Exited</option>
+      </select>
+    </div> {% endcomment %}
+    <div class="flex justify-center gap-4 my-4">
+  <button onclick="filterVehicles('all')" class="filter-btn bg-blue-500 text-white px-4 py-2 rounded-xl shadow hover:bg-blue-600">All</button>
+  <button onclick="filterVehicles('car')" class="filter-btn bg-gray-200 text-gray-800 px-4 py-2 rounded-xl shadow hover:bg-blue-100">Car</button>
+  <button onclick="filterVehicles('motorcycle')" class="filter-btn bg-gray-200 text-gray-800 px-4 py-2 rounded-xl shadow hover:bg-blue-100">Motorcycle</button>
+  <button onclick="filterVehicles('others')" class="filter-btn bg-gray-200 text-gray-800 px-4 py-2 rounded-xl shadow hover:bg-blue-100">Others</button>
+</div>
+
+
+    <div class="overflow-x-auto rounded shadow-lg">
+      <table class="min-w-full bg-white border border-gray-200">
+        <thead>
+          <tr class="bg-gray-100 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+            <th class="px-6 py-3">License Plate</th>
+            <th class="px-6 py-3">Token Number</th>
+            <th class="px-6 py-3">Entry Time</th>
+            <th class="px-6 py-3">Exit Time</th>
+            <th class="px-6 py-3">Status</th>
+          </tr>
+        </thead>
+        <tbody class="text-gray-700 text-sm">
+          {% for record in monthly_pass_vehicles %}
+          <tr class="border-t border-gray-200 hover:bg-gray-50" data-status="{{ record.status }}">
+            <td class="px-6 py-4">{{ record.vehicle.license_plate }}</td>
+            <td class="px-6 py-4">{{ record.token_number }}</td>
+            <td class="px-6 py-4">{{ record.entry_time|date:"M d, Y, h:i A" }}</td>
+            <td class="px-6 py-4">
+              {% if record.exit_time %}
+                {{ record.exit_time|date:"M d, Y, h:i A" }}
+              {% else %}
+                <span class="text-gray-400">-</span>
+              {% endif %}
+            </td>
+            <td class="px-6 py-4">
+              {% if record.status == 'parked' %}
+                <span class="bg-green-500 text-white px-2 py-1 rounded-full text-xs">Parked</span>
+              {% else %}
+                <span class="bg-gray-500 text-white px-2 py-1 rounded-full text-xs">Exited</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="text-center text-gray-500 py-4">No monthly pass vehicles found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>

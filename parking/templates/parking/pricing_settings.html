@@ -1,0 +1,183 @@
+{% extends 'parking/base.html' %}
+
+{% block title %}Pricing Settings - SmartPark{% endblock %}
+
+{% block content %}
+<div class="container mx-auto p-4">
+    <h1 class="text-3xl font-bold mb-6">💰 Pricing Settings</h1>
+
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+        <h2 class="text-xl font-semibold mb-4">Set Hourly Rates for Vehicle Types</h2>
+        
+        <form id="pricing-form" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- Car Pricing -->
+            <div class="bg-blue-50 rounded-lg p-4">
+                <div class="flex items-center mb-3">
+                    <span class="text-2xl mr-3">🚗</span>
+                    <h3 class="text-lg font-semibold text-blue-700">Car Pricing</h3>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <label class="text-sm font-medium text-gray-700">Price (Rs):</label>
+                    <input type="number" 
+                           id="car-price" 
+                           name="car_price" 
+                           step="0.01" 
+                           min="0" 
+                           value="{{ pricing.car_price_per_hour|default:5.00 }}"
+                           class="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <span class="text-sm text-gray-500">per hour</span>
+                </div>
+            </div>
+
+            <!-- Motorcycle Pricing -->
+            <div class="bg-green-50 rounded-lg p-4">
+                <div class="flex items-center mb-3">
+                    <span class="text-2xl mr-3">🏍️</span>
+                    <h3 class="text-lg font-semibold text-green-700">Motorcycle Pricing</h3>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <label class="text-sm font-medium text-gray-700">Price  (Rs):</label>
+                    <input type="number" 
+                           id="motorcycle-price" 
+                           name="motorcycle_price" 
+                           step="0.01" 
+                           min="0" 
+                           value="{{ pricing.motorcycle_price_per_hour|default:3.00 }}"
+                           class="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <span class="text-sm text-gray-500">per hour</span>
+                </div>
+            </div>
+
+            <!-- Others Pricing -->
+            <div class="bg-orange-50 rounded-lg p-4">
+                <div class="flex items-center mb-3">
+                    <span class="text-2xl mr-3">🚚</span>
+                    <h3 class="text-lg font-semibold text-orange-700">Others (Trucks, Vans, etc.)</h3>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <label class="text-sm font-medium text-gray-700">Price(Rs):</label>
+                    <input type="number" 
+                           id="others-price" 
+                           name="others_price" 
+                           step="0.01" 
+                           min="0" 
+                           value="{{ pricing.others_price_per_hour|default:7.00 }}"
+                           class="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    <span class="text-sm text-gray-500">per hour</span>
+                </div>
+            </div>
+
+            <!-- Save Button -->
+            <div class="flex justify-center pt-4">
+                <button type="submit" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition duration-200 shadow-lg">
+                    💾 Save Pricing Settings
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Current Pricing Preview -->
+    <div class="bg-white rounded-2xl shadow-lg p-6">
+        <h2 class="text-xl font-semibold mb-4">📊 Current Pricing Preview</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="text-center p-4 bg-blue-100 rounded-lg">
+                <div class="text-2xl mb-2">🚗</div>
+                <div class="font-semibold">Cars</div>
+                <div class="text-2xl font-bold text-blue-600" id="preview-car-price">Rs{{ pricing.car_price_per_hour|default:5.00 }}</div>
+                <div class="text-sm text-gray-600">per hour</div>
+            </div>
+            <div class="text-center p-4 bg-green-100 rounded-lg">
+                <div class="text-2xl mb-2">🏍️</div>
+                <div class="font-semibold">Motorcycles</div>
+                <div class="text-2xl font-bold text-green-600" id="preview-motorcycle-price">Rs{{ pricing.motorcycle_price_per_hour|default:3.00 }}</div>
+                <div class="text-sm text-gray-600">per hour</div>
+            </div>
+            <div class="text-center p-4 bg-orange-100 rounded-lg">
+                <div class="text-2xl mb-2">🚚</div>
+                <div class="font-semibold">Others</div>
+                <div class="text-2xl font-bold text-orange-600" id="preview-others-price">Rs{{ pricing.others_price_per_hour|default:7.00 }}</div>
+                <div class="text-sm text-gray-600">per hour</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('pricing-form');
+    const carPriceInput = document.getElementById('car-price');
+    const motorcyclePriceInput = document.getElementById('motorcycle-price');
+    const othersPriceInput = document.getElementById('others-price');
+    
+    // Update preview when inputs change
+    function updatePreview() {
+        document.getElementById('preview-car-price').textContent = '$' + parseFloat(carPriceInput.value || 0).toFixed(2);
+        document.getElementById('preview-motorcycle-price').textContent = '$' + parseFloat(motorcyclePriceInput.value || 0).toFixed(2);
+        document.getElementById('preview-others-price').textContent = '$' + parseFloat(othersPriceInput.value || 0).toFixed(2);
+    }
+    
+    carPriceInput.addEventListener('input', updatePreview);
+    motorcyclePriceInput.addEventListener('input', updatePreview);
+    othersPriceInput.addEventListener('input', updatePreview);
+    
+    // Handle form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+        formData.append('car_price', carPriceInput.value);
+        formData.append('motorcycle_price', motorcyclePriceInput.value);
+        formData.append('others_price', othersPriceInput.value);
+        
+        fetch('/api/update-pricing/', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                const successDiv = document.createElement('div');
+                successDiv.className = 'bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4';
+                successDiv.innerHTML = '✅ Pricing settings updated successfully!';
+                form.parentNode.insertBefore(successDiv, form);
+                
+                // Remove success message after 3 seconds
+                setTimeout(() => {
+                    successDiv.remove();
+                }, 3000);
+            } else {
+                // Show error message
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4';
+                errorDiv.innerHTML = '❌ Error updating pricing: ' + (data.error || 'Unknown error');
+                form.parentNode.insertBefore(errorDiv, form);
+                
+                // Remove error message after 5 seconds
+                setTimeout(() => {
+                    errorDiv.remove();
+                }, 5000);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4';
+            errorDiv.innerHTML = '❌ Network error occurred';
+            form.parentNode.insertBefore(errorDiv, form);
+            
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        });
+    });
+});
+</script>
+{% endblock %}
+

@@ -1,0 +1,105 @@
+{% extends 'parking/base.html' %}
+
+{% block title %}Register - SmartPark{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Create Account</h1>
+    <p class="page-subtitle">Join SmartPark to manage your parking system</p>
+</div>
+
+<div class="max-w-md mx-auto">
+    <div class="card">
+        {% if form.errors %}
+            <div class="alert alert-error">
+                <strong>Please correct the errors below:</strong>
+                <ul class="mt-2">
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                            <li>{{ field|title }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
+                {{ form.username }}
+                {% if form.username.help_text %}
+                    <small class="text-gray-600">{{ form.username.help_text }}</small>
+                {% endif %}
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="form-group">
+                    <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name</label>
+                    {{ form.first_name }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name</label>
+                    {{ form.last_name }}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                {{ form.email }}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.parking_name.id_for_label }}" class="form-label">Parking Name</label>
+                {{ form.parking_name }}
+                <small class="text-gray-600">This will appear on receipts and dashboard</small>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.phone.id_for_label }}" class="form-label">Phone Number (Optional)</label>
+                {{ form.phone }}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password1.id_for_label }}" class="form-label">Password</label>
+                {{ form.password1 }}
+                {% if form.password1.help_text %}
+                    <small class="text-gray-600">{{ form.password1.help_text }}</small>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.password2.id_for_label }}" class="form-label">Confirm Password</label>
+                {{ form.password2 }}
+            </div>
+
+            <button type="submit" class="btn btn-primary w-full">Create Account</button>
+        </form>
+
+        <div class="text-center mt-6">
+            <p class="text-gray-600">Already have an account? 
+                <a href="{% url 'parking:login' %}" class="text-blue-600 hover:underline">Login here</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+</style>
+{% endblock %}
+

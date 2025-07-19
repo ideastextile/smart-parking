@@ -1,0 +1,60 @@
+{% extends 'parking/base.html' %}
+
+{% block title %}Login - SmartPark{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Welcome Back</h1>
+    <p class="page-subtitle">Sign in to your SmartPark account</p>
+</div>
+
+<div class="max-w-md mx-auto">
+    <div class="card">
+        {% if form.errors %}
+            <div class="alert alert-error">
+                <strong>Invalid username or password.</strong> Please try again.
+            </div>
+        {% endif %}
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" name="username" required class="form-control" placeholder="Enter your username">
+            </div>
+
+            <div class="form-group">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" name="password" required class="form-control" placeholder="Enter your password">
+            </div>
+
+            <button type="submit" class="btn btn-primary w-full">Sign In</button>
+        </form>
+
+        <div class="text-center mt-6">
+            <p class="text-gray-600">Don't have an account? 
+                {% comment %} <a href="{% url 'parking:register' %}" class="text-blue-600 hover:underline">Register here</a> {% endcomment %}
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+</style>
+{% endblock %}
+

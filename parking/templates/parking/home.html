@@ -4,7 +4,8 @@
 
 {% block content %}
 <div class="text-center my-10">
-    <h1 class="text-4xl font-bold text-gray-800 drop-shadow-md">Smart Parking Management</h1>
+    {% comment %} <h1 class="text-2xl font-bold">Welcome to {{ parking_name }}</h1> {% endcomment %}
+   <h1 class="text-3xl font-bold">Welcome to {{ request.user.profile.parking_name }}</h1>
     <p class="text-lg text-gray-500 mt-2">Efficiency meets security — Park with confidence in our state-of-the-art facility</p>
 </div>
 
@@ -64,11 +65,117 @@
 
     <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition">
         <div class="flex flex-col items-center text-center">
-            <div class="w-20 h-20 bg-teal-600 text-white rounded-full flex items-center justify-center text-3xl shadow-lg mb-4">⚙️</div>
-            <h3 class="text-xl font-bold">Features</h3>
-            <p class="text-gray-500 mt-1 mb-4">Real-time tracking, secure access, and detailed insights</p>
-            <a href="{% url 'parking:dashboard' %}" class="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700 transition">Explore Features</a>
+            <div class="w-20 h-20 bg-orange-600 text-white rounded-full flex items-center justify-center text-3xl shadow-lg mb-4">💰</div>
+            <h3 class="text-xl font-bold">Revenue Analytics</h3>
+            <p class="text-gray-500 mt-1 mb-4">Track daily, weekly, and monthly revenue with detailed insights</p>
+            <a href="{% url 'parking:analytics' %}" class="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 transition">View Analytics</a>
         </div>
     </div>
 </div>
+
+<!-- Recent Exits Section -->
+<div class="mt-10">
+    <h2 class="text-2xl font-bold mb-6">🚗 Last 5 Exited Vehicles</h2>
+    <div class="bg-white rounded-2xl shadow-lg p-6">
+        <div class="overflow-x-auto">
+            <table class="min-w-full table-auto text-sm">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="px-4 py-3 text-left">License Plate</th>
+                        <th class="px-4 py-3 text-left">Vehicle Type</th>
+                        <th class="px-4 py-3 text-left">Exit Time</th>
+                        <th class="px-4 py-3 text-left">Duration</th>
+                        <th class="px-4 py-3 text-left">Parking Fee</th>
+                    </tr>
+                </thead>
+                <tbody id="recent-exits-table">
+                    <!-- Data will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Parking Usage Prediction -->
+<div class="mt-10">
+    <h2 class="text-2xl font-bold mb-6">📈 Parking Usage Prediction</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-2xl shadow-lg p-6">
+            <h3 class="text-lg font-semibold mb-4">Tomorrow's Predicted Usage</h3>
+            <div class="text-center">
+                <div class="text-4xl font-bold text-blue-600" id="predicted-vehicles">--</div>
+                <div class="text-sm text-gray-600">Expected Vehicles</div>
+            </div>
+            <div class="mt-4 text-sm text-gray-500">
+                Based on historical data and trends
+            </div>
+        </div>
+        <div class="bg-white rounded-2xl shadow-lg p-6">
+            <h3 class="text-lg font-semibold mb-4">Peak Hours Tomorrow</h3>
+            <div class="space-y-2">
+                <div class="flex justify-between">
+                    <span>Morning Peak:</span>
+                    <span class="font-semibold" id="morning-peak">8:00 AM - 10:00 AM</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Evening Peak:</span>
+                    <span class="font-semibold" id="evening-peak">5:00 PM - 7:00 PM</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Expected Occupancy:</span>
+                    <span class="font-semibold text-orange-600" id="expected-occupancy">75%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Fetch recent exits data
+    fetch('/api/recent-exits/')
+        .then(response => response.json())
+        .then(data => {
+            const tableBody = document.getElementById('recent-exits-table');
+            tableBody.innerHTML = '';
+            
+            if (data.recent_exits && data.recent_exits.length > 0) {
+                data.recent_exits.forEach(exit => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-4 py-3 font-medium">${exit.license_plate}</td>
+                        <td class="px-4 py-3 capitalize">${exit.vehicle_type}</td>
+                        <td class="px-4 py-3">${exit.exit_time}</td>
+                        <td class="px-4 py-3">${exit.duration} min</td>
+                        <td class="px-4 py-3">Rs${parseFloat(exit.parking_fee).toFixed(2)}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } else {
+                tableBody.innerHTML = '<tr><td colspan="5" class="px-4 py-3 text-center text-gray-500">No recent exits</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching recent exits:', error);
+            document.getElementById('recent-exits-table').innerHTML = '<tr><td colspan="5" class="px-4 py-3 text-center text-red-500">Error loading data</td></tr>';
+        });
+
+    // Fetch parking prediction data
+    fetch('/api/parking-prediction/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.predicted_vehicles) {
+                document.getElementById('predicted-vehicles').textContent = data.predicted_vehicles;
+            }
+            if (data.expected_occupancy) {
+                document.getElementById('expected-occupancy').textContent = data.expected_occupancy + '%';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching prediction data:', error);
+        });
+});
+</script>
 {% endblock %}

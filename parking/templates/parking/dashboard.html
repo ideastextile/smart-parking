@@ -3,275 +3,389 @@
 {% block title %}Dashboard - SmartPark{% endblock %}
 
 {% block content %}
-<div class="text-center mb-8">
-  <h1 class="text-3xl font-bold text-gray-800">📊 Parking Dashboard</h1>
-  <p class="text-gray-500">Monitor and manage parking activity in real-time</p>
-</div>
+<div class="container mx-auto p-4">
 
-<div class="flex justify-end mb-6 gap-4">
-  <button class="bg-indigo-600 text-white px-4 py-2 rounded shadow hover:bg-indigo-700 transition duration-200">📤 Export All</button>
-</div>
+  <h1 class="text-2xl font-bold mb-6">📊 {{ request.user.profile.parking_name }} Dashboard</h1>
 
-<!-- Summary Stats -->
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-  <div class="bg-white rounded-2xl shadow-xl p-6 transform hover:scale-105 transition duration-300">
-    <div class="flex justify-between items-center">
-      <h2 class="text-lg font-semibold text-gray-700">Currently Parked</h2>
-      <span class="text-3xl">🚗</span>
+  <!-- Summary Stats -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-10">
+    <div class="bg-gradient-to-r from-blue-100 to-blue-50 border border-blue-200 rounded-2xl shadow-lg p-6 hover:scale-105 transform transition duration-300">
+      <h2 class="text-md font-semibold text-blue-700">🚗 Currently Parked</h2>
+      <h3 class="mt-4 text-4xl font-extrabold text-blue-800">{{ currently_parked }}</h3>
+      <p class="text-sm text-gray-500 mt-1">Vehicles currently inside</p>
     </div>
-    <p class="mt-4 text-2xl font-bold text-blue-600">{{ currently_parked }}</p>
-  </div>
-  
-  <div class="bg-white rounded-2xl shadow-xl p-6 transform hover:scale-105 transition duration-300">
-    <div class="flex justify-between items-center">
-      <h2 class="text-lg font-semibold text-gray-700">Exited Vehicles</h2>
-      <span class="text-3xl">⬅️</span>
+    <div class="bg-gradient-to-r from-green-100 to-green-50 border border-green-200 rounded-2xl shadow-lg p-6 hover:scale-105 transform transition duration-300">
+      <h2 class="text-md font-semibold text-green-700">🏁 Exited Today</h2>
+      <h3 class="mt-4 text-4xl font-extrabold text-green-800">{{ exited_today }}</h3>
+      <p class="text-sm text-gray-500 mt-1">Vehicles that have exited today</p>
     </div>
-    <p class="mt-4 text-2xl font-bold text-green-600">{{ exited_today }}</p>
-  </div>
-  
-  <div class="bg-white rounded-2xl shadow-xl p-6 transform hover:scale-105 transition duration-300">
-    <div class="flex justify-between items-center">
-      <h2 class="text-lg font-semibold text-gray-700">Avg. Parking Time</h2>
-      <span class="text-3xl">⏱️</span>
-    </div>
-    <p class="mt-4 text-2xl font-bold text-purple-600">{{ avg_minutes }} min</p>
-  </div>
-</div>
-
-<!-- Tabs -->
-<div class="mb-6 flex gap-4">
-  <button onclick="switchTab('regular')" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700">Regular ({{ regular_vehicles.count }})</button>
-  <button onclick="switchTab('monthly')" class="bg-gray-600 text-white px-4 py-2 rounded shadow hover:bg-gray-700">Monthly Pass ({{ monthly_pass_vehicles.count }})</button>
-</div>
-
-<!-- Reset Confirmation Modal -->
-<div id="confirmModal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
-  <div class="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full text-center">
-    <h3 class="text-xl font-semibold mb-3">🔐 Confirm Reset</h3>
-    <p class="mb-4 text-gray-600">Enter admin code to reset all monthly data.</p>
-    <input type="password" id="resetCodeInput" class="w-full px-4 py-2 border rounded mb-4" placeholder="Admin Code">
-    <div class="flex justify-center gap-4">
-      <button onclick="hideConfirmModal()" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
-      <button onclick="confirmReset()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Confirm</button>
+    <div class="bg-gradient-to-r from-indigo-100 to-indigo-50 border border-indigo-200 rounded-2xl shadow-lg p-6 hover:scale-105 transform transition duration-300">
+      <h2 class="text-md font-semibold text-indigo-700">📊 Total Vehicles</h2>
+      <h3 class="mt-4 text-4xl font-extrabold text-indigo-800">{{ total_vehicles }}</h3>
+      <p class="text-sm text-gray-500 mt-1">Total records in system</p>
     </div>
   </div>
-</div>
 
-<!-- Regular Vehicles Table -->
-<div id="regularSection">
-  <div class="flex justify-between items-center mb-4">
-    <h2 class="text-xl font-semibold">🚘 Regular Vehicles</h2>
-    <button onclick="showConfirmModal()" class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700">🗑️ Reset Monthly Data</button>
+  <!-- Tab Buttons -->
+  <div class="flex gap-4 mb-4 border-b border-gray-200">
+    <button id="regularTab" class="tab-btn" onclick="switchTab('regular')">
+      Regular Vehicles
+    </button>
+    <button id="monthlyTab" class="tab-btn" onclick="switchTab('monthly')">
+      Monthly Pass Vehicles
+    </button>
   </div>
 
-  <div class="flex gap-4 mb-4">
-    <input type="text" id="searchRegular" placeholder="Search..." class="w-1/3 px-4 py-2 border rounded">
-    <select id="filterRegular" class="px-4 py-2 border rounded">
-      <option value="">All</option>
-      <option value="parked">Parked</option>
-      <option value="exited">Exited</option>
-    </select>
+  <!-- Regular Vehicles Section -->
+  <div id="regularSection" class="tab-content">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-semibold text-gray-800">🚗 Regular Vehicles</h2>
+    </div>
+    <!-- Filter Buttons for Regular -->
+    <div id="regular-filter-container" class="flex gap-2 my-4">
+       <input type="text" id="regular-search" placeholder="🔍 Search by License Plate..." class="w-full md:w-1/3 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
+      <button class="filter-btn active-filter" data-type="all">All</button>
+      <button class="filter-btn" data-type="car">Car</button>
+      <button class="filter-btn" data-type="motorcycle">Motorcycle</button>
+      <button class="filter-btn" data-type="others">Others</button>
+    </div>
+    <div class="overflow-x-auto shadow-xl rounded-2xl bg-white/80 backdrop-blur-lg ring-1 ring-gray-200 p-4">
+      <table class="min-w-full table-auto text-sm text-gray-800">
+        <thead>
+          <tr class="text-left bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 text-gray-700 rounded-t-lg">
+            <th class="px-4 py-3">🚘 License Plate</th>
+            <th class="px-4 py-3">🎫 Token Number</th>
+            <th class="px-4 py-3">🕒 Entry Time</th>
+            <th class="px-4 py-3">🏁 Exit Time</th>
+            <th class="px-4 py-3">📍 Status</th>
+          </tr>
+        </thead>
+        <tbody id="regular-vehicle-table-body">
+          {% for record in regular_vehicles %}
+            <tr class="vehicle-row border-b border-gray-200" data-type="{{ record.vehicle.vehicle_type}}" data-status="{{ record.status }}" data-license="{{ record.vehicle.license_plate|lower }}">
+              <td class="px-4 py-3 font-semibold">{{ record.vehicle.license_plate }}</td>
+              <td class="px-4 py-3">{{ record.token_number }}</td>
+              <td class="px-4 py-3">{{ record.entry_time|date:"M d, Y - H:i" }}</td>
+              <td class="px-4 py-3">
+                {% if record.exit_time %}{{ record.exit_time|date:"M d, Y - H:i" }}{% else %}<span class="text-gray-400 italic">Still Parked</span>{% endif %}
+              </td>
+              <td class="px-4 py-3">
+                <span class="inline-block px-3 py-1 text-xs font-bold rounded-full shadow-sm {% if record.status == 'parked' %}bg-green-500 text-white{% else %}bg-gray-400 text-white{% endif %}">
+                  {{ record.status|capfirst }}
+                </span>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <div class="overflow-x-auto rounded shadow-lg">
-    <table class="min-w-full bg-white border border-gray-200">
-      <thead>
-        <tr class="bg-gray-100 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-          <th class="px-6 py-3">License Plate</th>
-          <th class="px-6 py-3">Token Number</th>
-          <th class="px-6 py-3">Entry Time</th>
-          <th class="px-6 py-3">Exit Time</th>
-          <th class="px-6 py-3">Status</th>
-        </tr>
-      </thead>
-      <tbody class="text-gray-700 text-sm">
-        {% for record in regular_vehicles %}
-        <tr class="border-t border-gray-200 hover:bg-gray-50">
-          <td class="px-6 py-4">{{ record.vehicle.license_plate }}</td>
-          <td class="px-6 py-4">{{ record.token_number }}</td>
-          <td class="px-6 py-4">{{ record.entry_time|date:"M d, Y, h:i A" }}</td>
-          <td class="px-6 py-4">
-            {% if record.exit_time %}
-              {{ record.exit_time|date:"M d, Y, h:i A" }}
-            {% else %}
-              <span class="text-gray-400">-</span>
-            {% endif %}
-          </td>
-          <td class="px-6 py-4">
-            {% if record.status == 'parked' %}
-              <span class="bg-green-500 text-white px-2 py-1 rounded-full text-xs">Parked</span>
-            {% else %}
-              <span class="bg-gray-500 text-white px-2 py-1 rounded-full text-xs">Exited</span>
-            {% endif %}
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="5" class="text-center text-gray-500 py-4">No regular vehicles found.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <!-- Monthly Pass Section -->
+  <div id="monthlySection" class="tab-content hidden">
+    <div class="bg-white/70 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200 p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-extrabold text-gray-800 flex items-center gap-2">🅿️ Monthly Pass Vehicles</h2>
+      </div>
+      <!-- Filter Buttons for Monthly -->
+      <div id="monthly-filter-container" class="flex gap-2 my-4">
+         <input type="text" id="monthly-search" placeholder="🔍 Search by License Plate..." class="w-full md:w-1/3 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
+        <button class="filter-btn active-filter" data-type="all">All</button>
+        <button class="filter-btn" data-type="car">Car</button>
+        <button class="filter-btn" data-type="motorcycle">Motorcycle</button>
+        <button class="filter-btn" data-type="others">Others</button>
+      </div>
+      <div class="overflow-x-auto rounded-xl border border-gray-300 shadow-xl">
+        <table class="min-w-full text-sm text-gray-800 bg-white">
+          <thead class="bg-blue-100 text-gray-700 uppercase text-xs tracking-wider">
+            <tr>
+              <th class="px-6 py-4">License Plate</th>
+              <th class="px-6 py-4">Token Number</th>
+              <th class="px-6 py-4">Entry Time</th>
+              <th class="px-6 py-4">Exit Time</th>
+              <th class="px-6 py-4">Status</th>
+            </tr>
+          </thead>
+          <tbody id="monthly-vehicle-table-body">
+            {% for record in monthly_pass_vehicles %}
+            <tr class="vehicle-row hover:bg-blue-50 transition duration-200 border-t border-gray-200" data-type="{{ record.vehicle.vehicle_type|lower }}" data-status="{{ record.status }}" data-license="{{ record.vehicle.license_plate|lower }}">
+              <td class="px-6 py-4">{{ record.vehicle.license_plate }}</td>
+              <td class="px-6 py-4">{{ record.token_number }}</td>
+              <td class="px-6 py-4">{{ record.entry_time|date:"M d, Y, h:i A" }}</td>
+              <td class="px-6 py-4">
+                {% if record.exit_time %}{{ record.exit_time|date:"M d, Y, h:i A" }}{% else %}<span class="text-gray-400 italic">Not exited</span>{% endif %}
+              </td>
+              <td class="px-6 py-4">
+                <span class="inline-block px-3 py-1 text-xs font-semibold text-white {% if record.status == 'parked' %}bg-green-500{% else %}bg-gray-500{% endif %} rounded-full shadow">
+                  {{ record.status|capfirst }}
+                </span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-gray-500 py-6">No monthly pass vehicles found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
+ 
+
+  <!-- Backup & Restore Section -->
+  <div class="mt-8 bg-white rounded-xl shadow-lg p-6 space-y-6">
+    <h2 class="text-xl font-semibold text-gray-800">🔄 Backup & Restore</h2>
+    <button onclick="showConfirmModal()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow transition duration-300">
+          🗑️ Reset All Data
+        </button>
+
+    <!-- Download Backup Button -->
+    <form action="{% url 'parking:download_backup' %}" method="get" class="flex items-center justify-between bg-blue-100 rounded-lg p-4">
+      <p class="text-gray-700">Download a backup of your parking data.</p>
+      <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow transition duration-300">
+        ⬇ Download Backup
+      </button>
+    </form>
+
+    <!-- Upload Backup Button -->
+    <form action="{% url 'parking:upload_backup' %}" method="post" enctype="multipart/form-data" class="bg-green-100 rounded-lg p-4 space-y-4">
+      {% csrf_token %}
+      <div>
+        <label class="block text-gray-700 font-medium mb-1">Choose a .json file to restore backup:</label>
+        <input type="file" name="backup_file" accept=".json" class="w-full p-2 border border-gray-300 rounded-md shadow-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:bg-green-600 file:text-white hover:file:bg-green-700" required>
+      </div>
+      <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg shadow transition duration-300">
+        ♻️ Restore Backup
+      </button>
+    </form>
+  </div>
+
+  <!-- Confirm Modal for Reset -->
+  <div id="confirmModal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full">
+      <h3 class="text-xl font-semibold mb-2 text-red-600">🔐 Confirm Reset</h3>
+      <p class="mb-4 text-gray-600 text-sm">Enter admin code to reset all monthly data. This action cannot be undone.</p>
+      <input type="password" id="resetCodeInput" placeholder="Admin Code" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 mb-4">
+      <div class="flex justify-center gap-4">
+        <button onclick="hideConfirmModal()" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg">Cancel</button>
+        <button onclick="confirmReset()" class="px-4 py-2 bg-red-500 text-white rounded-lg">Confirm Reset</button>
+      </div>
+    </div>
+  </div>
+<!--================-->
+
+
 </div>
 {% endblock %}
+
+{% block extra_css %}
+<style>
+  .tab-btn {
+    padding: 8px 16px;
+    font-weight: 600;
+    color: #4B5563; /* gray-600 */
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s;
+  }
+  .tab-btn.active-tab {
+    color: #3B82F6; /* blue-500 */
+    border-bottom-color: #3B82F6;
+  }
+  .filter-btn {
+    background-color: #E5E7EB; /* gray-200 */
+    color: #374151; /* gray-700 */
+    padding: 8px 16px;
+    border-radius: 9999px;
+    font-weight: 500;
+    transition: all 0.3s;
+  }
+  .filter-btn.active-filter {
+    background-color: #3B82F6; /* blue-500 */
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+</style>
+{% endblock %}
+
 
 {% block extra_js %}
 <script>
-function switchTab(tab) {
-    const regularTab = document.getElementById('regularTab');
-    const monthlyTab = document.getElementById('monthlyTab');
-    const regularSection = document.getElementById('regularSection');
-    const monthlySection = document.getElementById('monthlySection');
-    
-    if (tab === 'regular') {
-        regularTab.className = 'btn btn-primary';
-        monthlyTab.className = 'btn btn-secondary';
-        regularSection.style.display = 'block';
-        monthlySection.style.display = 'none';
-    } else {
-        regularTab.className = 'btn btn-secondary';
-        monthlyTab.className = 'btn btn-primary';
-        regularSection.style.display = 'none';
-        monthlySection.style.display = 'block';
-    }
-}
+document.addEventListener("DOMContentLoaded", function () {
+    const tabs = {
+        regular: document.getElementById('regularTab'),
+        monthly: document.getElementById('monthlyTab')
+    };
+    const sections = {
+        regular: document.getElementById('regularSection'),
+        monthly: document.getElementById('monthlySection')
+    };
 
-async function clearRegularData() {
-    if (confirm('Are you sure you want to clear all regular parking data? This action cannot be undone.')) {
-        try {
-            const response = await fetch('{% url "parking:clear_data" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                showAlert('Regular parking data cleared successfully!', 'success');
-                setTimeout(() => {
-                    location.reload();
-                }, 1000);
-            } else {
-                showAlert(result.error, 'error');
-            }
-        } catch (error) {
-            showAlert('An error occurred. Please try again.', 'error');
-            console.error('Error:', error);
-        }
-    }
-}
-
-async function clearMonthlyData() {
-    if (confirm('Are you sure you want to clear all monthly pass data? This action cannot be undone.')) {
-        try {
-            const response = await fetch('{% url "parking:clear_data" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                showAlert('Monthly pass data cleared successfully!', 'success');
-                setTimeout(() => {
-                    location.reload();
-                }, 1000);
-            } else {
-                showAlert(result.error, 'error');
-            }
-        } catch (error) {
-            showAlert('An error occurred. Please try again.', 'error');
-            console.error('Error:', error);
-        }
-    }
-}
-
-// Search and filter functionality
-document.getElementById('searchRegular').addEventListener('input', function() {
-    filterTable('regularTable', this.value, document.getElementById('filterRegular').value);
-});
-
-document.getElementById('filterRegular').addEventListener('change', function() {
-    filterTable('regularTable', document.getElementById('searchRegular').value, this.value);
-});
-
-document.getElementById('searchMonthly').addEventListener('input', function() {
-    filterTable('monthlyTable', this.value, document.getElementById('filterMonthly').value);
-});
-
-document.getElementById('filterMonthly').addEventListener('change', function() {
-    filterTable('monthlyTable', document.getElementById('searchMonthly').value, this.value);
-});
-
-function filterTable(tableId, searchTerm, statusFilter) {
-    const table = document.getElementById(tableId);
-    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-    
-    for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
-        const cells = row.getElementsByTagName('td');
-        
-        if (cells.length === 1) continue; // Skip empty state row
-        
-        const licensePlate = cells[0].textContent.toLowerCase();
-        const tokenNumber = cells[1].textContent.toLowerCase();
-        const status = row.getAttribute('data-status');
-        
-        const matchesSearch = licensePlate.includes(searchTerm.toLowerCase()) || 
-                            tokenNumber.includes(searchTerm.toLowerCase());
-        const matchesFilter = !statusFilter || status === statusFilter;
-        
-        if (matchesSearch && matchesFilter) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
-    }
-}
-</script>
-<!-- reset.button-->
-<script>
-function showConfirmModal() {
-    document.getElementById('confirmModal').classList.remove('hidden');
-}
-
-function hideConfirmModal() {
-    document.getElementById('confirmModal').classList.add('hidden');
-}
-
-function confirmReset() {
-    const code = document.getElementById('resetCodeInput').value.trim();
-    
-    if (code === "1010") {  // 🔐 Set your own secure code here
-        // Send reset request to backend
-        fetch("{% url 'parking:clear_data' %}", {
-            method: "POST",
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}',
-            },
-            body: JSON.stringify({ confirmed: true })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                alert("✅ All monthly data reset successfully!");
-                window.location.reload();
-            } else {
-                alert("❌ Error: " + data.error);
-            }
+    // Function to switch between tabs
+    window.switchTab = function (tabKey) {
+        Object.keys(tabs).forEach(key => {
+            const isSelected = key === tabKey;
+            tabs[key].classList.toggle('active-tab', isSelected);
+            sections[key].classList.toggle('hidden', !isSelected);
         });
-    } else {
-        alert("❌ Incorrect code!");
+    };
+
+    // Function to handle filtering logic
+    function setupFilter(containerId, tableBodyId) {
+        const filterContainer = document.getElementById(containerId);
+        const tableBody = document.getElementById(tableBodyId);
+        if (!filterContainer || !tableBody) return;
+
+        const filterButtons = filterContainer.querySelectorAll('.filter-btn');
+        const rows = tableBody.querySelectorAll('.vehicle-row');
+
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Update active button style
+                filterButtons.forEach(btn => btn.classList.remove('active-filter'));
+                button.classList.add('active-filter');
+
+                const filterType = button.getAttribute('data-type');
+
+                // Filter rows
+                rows.forEach(row => {
+                    const vehicleType = row.getAttribute('data-type');
+                    const shouldShow = (filterType === 'all' || vehicleType === filterType);
+                    row.style.display = shouldShow ? '' : 'none';
+                });
+            });
+        });
     }
-}
+
+    // Setup filtering for both sections
+    setupFilter('regular-filter-container', 'regular-vehicle-table-body');
+    setupFilter('monthly-filter-container', 'monthly-vehicle-table-body');
+
+    // Set initial state
+    switchTab('regular');
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const tabs = {
+        regular: document.getElementById('regularTab'),
+        monthly: document.getElementById('monthlyTab')
+    };
+    const sections = {
+        regular: document.getElementById('regularSection'),
+        monthly: document.getElementById('monthlySection')
+    };
+
+    window.switchTab = function (tabKey) {
+        Object.keys(tabs).forEach(key => {
+            const isSelected = key === tabKey;
+            tabs[key].classList.toggle('active-tab', isSelected);
+            sections[key].classList.toggle('hidden', !isSelected);
+        });
+    };
+
+    function setupFilter(containerId, tableBodyId, searchInputId) {
+        const filterContainer = document.getElementById(containerId);
+        const tableBody = document.getElementById(tableBodyId);
+        const searchInput = document.getElementById(searchInputId);
+        if (!filterContainer || !tableBody || !searchInput) return;
+
+        const filterButtons = filterContainer.querySelectorAll('.filter-btn');
+        const rows = tableBody.querySelectorAll('.vehicle-row');
+
+        function applyFilters() {
+            const activeFilterBtn = filterContainer.querySelector('.active-filter');
+            const filterType = activeFilterBtn.getAttribute('data-type');
+            const searchTerm = searchInput.value.toLowerCase();
+
+            rows.forEach(row => {
+                const vehicleType = row.getAttribute('data-type');
+                const licensePlate = row.getAttribute('data-license');
+
+                const typeMatch = (filterType === 'all' || vehicleType === filterType);
+                const searchMatch = licensePlate.includes(searchTerm);
+
+                row.style.display = (typeMatch && searchMatch) ? '' : 'none';
+            });
+        }
+
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                filterButtons.forEach(btn => btn.classList.remove('active-filter'));
+                button.classList.add('active-filter');
+                applyFilters();
+            });
+        });
+
+        searchInput.addEventListener('input', applyFilters);
+        
+        // Initial filter application
+        applyFilters();
+    }
+
+    setupFilter('regular-filter-container', 'regular-vehicle-table-body', 'regular-search');
+    setupFilter('monthly-filter-container', 'monthly-vehicle-table-body', 'monthly-search');
+
+    // --- Reset Modal Logic ---
+    // ... (Reset modal JS remains the same) ...
+
+    // Set initial state
+    switchTab('regular');
+});
+</script>
+
+{% comment %} ----------- {% endcomment %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // ... (Tab switching and filtering logic from previous response remains the same) ...
+
+    // --- Reset Modal Logic ---
+    const confirmModal = document.getElementById('confirmModal');
+    const resetCodeInput = document.getElementById('resetCodeInput');
+
+    window.showConfirmModal = function() {
+        confirmModal.classList.remove('hidden');
+    }
+
+    window.hideConfirmModal = function() {
+        confirmModal.classList.add('hidden');
+    }
+
+    window.confirmReset = function() {
+        const code = resetCodeInput.value.trim();
+        
+        // 🔐 IMPORTANT: Change this code to something secure!
+        if (code === "1010") { 
+            // Send reset request to the backend
+            fetch("{% url 'parking:clear_data' %}", {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+                body: JSON.stringify({ confirmed: true, type: 'monthly' }) // Specify type
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert("✅ All monthly data has been reset successfully!");
+                    window.location.reload();
+                } else {
+                    alert("❌ Error: " + data.error);
+                }
+            })
+            .catch(err => {
+                console.error("Reset Error:", err);
+                alert("❌ An unexpected error occurred.");
+            });
+        } else {
+            alert("❌ Incorrect admin code!");
+        }
+    }
+
+    // Set initial state
+    switchTab('regular');
+});
 </script>
 
 {% endblock %}
-
